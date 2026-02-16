@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Sociogram Survey</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .header h1 { font-size: 1.8em; margin-bottom: 10px; }
+        .header p { opacity: 0.9; }
+        
+        .content { padding: 25px; }
+        
+        .screen { display: none; }
+        .screen.active { display: block; animation: fadeIn 0.3s; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .person-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .person-card {
+            background: white;
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .person-card:active { transform: scale(0.95); }
+        
+        .person-card.selected {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #e8eaf6 0%, #f3e5f5 100%);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .person-name { font-weight: 600; font-size: 1.1em; margin-bottom: 5px; color: #333; }
+        .person-role { font-size: 0.8em; color: #666; text-transform: uppercase; }
+        
+        .survey-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        
+        .survey-header h2 { font-size: 1.3em; margin-bottom: 5px; }
+        
+        .survey-header .role-tag {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            display: inline-block;
+            margin-top: 5px;
+        }
+        
+        .progress { text-align: center; color: #666; margin-bottom: 15px; font-weight: 600; }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.4s ease;
+        }
+        
+        .question-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .question-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+        
+        .question-subtitle {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+        
+        .select-all {
+            background: #e8eaf6;
+            color: #667eea;
+            padding: 12px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            width: 100%;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+        
+        .options-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .option {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            border: 2px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .option:active { transform: scale(0.98); }
+        .option.selected { border-color: #667eea; background: #e8eaf6; }
+        
+        .checkbox {
+            width: 26px;
+            height: 26px;
+            border: 3px solid #667eea;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            background: white;
+        }
+        
+        .option.selected .checkbox { background: #667eea; }
+        
+        .checkmark { color: white; font-weight: bold; font-size: 1.2em; display: none; }
+        .option.selected .checkmark { display: block; }
+        
+        .option-label { flex: 1; font-weight: 500; color: #333; }
+        
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-secondary { background: #6c757d; color: white; }
+        
+        .thank-you { text-align: center; padding: 40px 20px; }
+        
+        .thank-you-icon {
+            font-size: 6em;
+            margin-bottom: 20px;
+            animation: bounce 0.6s;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .thank-you h2 { color: #333; margin-bottom: 15px; font-size: 1.8em; }
+        .thank-you p { color: #666; line-height: 1.6; }
+        
+        .loading { text-align: center; padding: 40px; }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .admin-link {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 1000;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            font-size: 1em;
+            margin-bottom: 15px;
+        }
+
+        code {
+            background: #f5f5f5;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: block;
+            margin: 10px 0;
+            word-break: break-all;
+            font-size: 0.85em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌐 Team Sociogram</h1>
+            <p>Help us understand team dynamics</p>
+        </div>
+
+        <div class="content">
+            <!-- Setup Screen -->
+            <div id="setup-screen" class="screen active">
+                <div class="info-box">
+                    <strong>⚙️ One-Time Setup (5 minutes)</strong><br><br>
+                    
+                    <strong>Step 1:</strong> Create a Google Sheet<br>
+                    • Go to <a href="https://sheets.google.com" target="_blank">sheets.google.com</a><br>
+                    • Create a new spreadsheet<br><br>
+                    
+                    <strong>Step 2:</strong> Add this script<br>
+                    • Click Extensions → Apps Script<br>
+                    • Delete existing code<br>
+                    • Paste the code from GOOGLE-SCRIPT.txt (download below)<br>
+                    • Click Save<br><br>
+                    
+                    <strong>Step 3:</strong> Deploy as Web App<br>
+                    • Click Deploy → New deployment<br>
+                    • Type: Web app<br>
+                    • Who has access: <strong>Anyone</strong><br>
+                    • Click Deploy<br>
+                    • Copy the Web App URL<br><br>
+                    
+                    <strong>Step 4:</strong> Paste URL below
+                </div>
+
+                <input type="text" id="script-url" placeholder="Paste your Web App URL here">
+                
+                <button class="btn btn-primary" onclick="saveScriptUrl()">✓ Save & Start</button>
+
+                <div style="margin-top: 15px; font-size: 0.85em; color: #666;">
+                    <strong>Need the script?</strong> Download GOOGLE-SCRIPT.txt from the files provided.
+                </div>
+            </div>
+
+            <!-- Person Selection -->
+            <div id="select-screen" class="screen">
+                <div class="info-box">
+                    <strong>👋 Welcome!</strong><br>
+                    Select your name to start the survey.
+                </div>
+                <div class="person-grid" id="person-grid"></div>
+            </div>
+
+            <!-- Survey -->
+            <div id="survey-screen" class="screen">
+                <div class="survey-header">
+                    <h2 id="survey-name"></h2>
+                    <div class="role-tag" id="survey-role"></div>
+                </div>
+
+                <div class="progress" id="progress-text">Question 1 of 3</div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                </div>
+
+                <div id="question-container"></div>
+
+                <button class="btn btn-primary" id="next-btn" onclick="nextQuestion()">Next →</button>
+            </div>
+
+            <!-- Loading -->
+            <div id="loading-screen" class="screen">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Saving your response...</p>
+                </div>
+            </div>
+
+            <!-- Thank You -->
+            <div id="thanks-screen" class="screen">
+                <div class="thank-you">
+                    <div class="thank-you-icon">🎉</div>
+                    <h2>Thank You!</h2>
+                    <p>Your response has been saved.</p>
+                </div>
+                <button class="btn btn-secondary" onclick="resetSurvey()">Fill Another Survey</button>
+            </div>
+        </div>
+    </div>
+
+    <a href="admin.html" class="admin-link">📊 View Results</a>
+
+    <script>
+        const SCRIPT_URL_KEY = 'sociogram_script_url';
+        
+        const colleagues = [
+            { id: 1, name: "Yasar", role: "Intern" },
+            { id: 2, name: "Nandani", role: "Intern" },
+            { id: 3, name: "Vrinda", role: "Intern" },
+            { id: 4, name: "Prapti", role: "Intern" },
+            { id: 5, name: "Pradipta", role: "Intern" },
+            { id: 6, name: "Devyani", role: "Intern" },
+            { id: 7, name: "Lakshyata", role: "Intern" },
+            { id: 8, name: "Stuti", role: "Intern" },
+            { id: 9, name: "Hershi", role: "Intern" },
+            { id: 10, name: "Hinal", role: "Intern" },
+            { id: 11, name: "Shraddha", role: "Intern" },
+            { id: 12, name: "Jenil", role: "Supervisor" },
+            { id: 13, name: "Pooja", role: "Intern" },
+            { id: 14, name: "Ayushi", role: "Intern" },
+            { id: 15, name: "Deeya", role: "Intern" },
+            { id: 16, name: "Grisha", role: "Intern" },
+            { id: 17, name: "Niyati", role: "Supervisor" },
+            { id: 18, name: "Ishika", role: "Intern" },
+            { id: 19, name: "Krishna", role: "Intern" },
+            { id: 20, name: "Kaeyoor Joshi", role: "CEO" }
+        ];
+
+        const questions = [
+            { id: 'work', icon: '💼', title: 'Work Collaboration', subtitle: 'Select people you prefer to work with' },
+            { id: 'friend', icon: '👥', title: 'Friendships', subtitle: 'Select people you consider friends' },
+            { id: 'communication', icon: '💬', title: 'Communication', subtitle: 'Select people you communicate with frequently' }
+        ];
+
+        let scriptUrl = '';
+        let currentPerson = null;
+        let currentQuestionIndex = 0;
+        let surveyData = { work: [], friend: [], communication: [] };
+
+        function init() {
+            scriptUrl = localStorage.getItem(SCRIPT_URL_KEY) || '';
+            if (scriptUrl) {
+                showScreen('select-screen');
+                renderPersonGrid();
+            } else {
+                showScreen('setup-screen');
+            }
+        }
+
+        function saveScriptUrl() {
+            const url = document.getElementById('script-url').value.trim();
+            if (!url) {
+                alert('Please enter the Web App URL');
+                return;
+            }
+            if (!url.includes('script.google.com')) {
+                alert('Invalid URL. Must be from script.google.com');
+                return;
+            }
+            scriptUrl = url;
+            localStorage.setItem(SCRIPT_URL_KEY, url);
+            showScreen('select-screen');
+            renderPersonGrid();
+        }
+
+        function renderPersonGrid() {
+            const grid = document.getElementById('person-grid');
+            grid.innerHTML = colleagues.map(p => `
+                <div class="person-card" onclick="selectPerson(${p.id})">
+                    <div class="person-name">${p.name}</div>
+                    <div class="person-role">${p.role}</div>
+                </div>
+            `).join('');
+        }
+
+        function selectPerson(id) {
+            currentPerson = colleagues.find(c => c.id === id);
+            currentQuestionIndex = 0;
+            surveyData = { work: [], friend: [], communication: [] };
+            showScreen('survey-screen');
+            document.getElementById('survey-name').textContent = currentPerson.name;
+            document.getElementById('survey-role').textContent = currentPerson.role;
+            showQuestion();
+        }
+
+        function showQuestion() {
+            const question = questions[currentQuestionIndex];
+            const others = colleagues.filter(c => c.id !== currentPerson.id);
+            
+            const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+            document.getElementById('progress-fill').style.width = progress + '%';
+            document.getElementById('progress-text').textContent = `Question ${currentQuestionIndex + 1} of 3`;
+
+            document.getElementById('question-container').innerHTML = `
+                <div class="question-card">
+                    <div class="question-title">${question.icon} ${question.title}</div>
+                    <div class="question-subtitle">${question.subtitle}</div>
+                    <button class="select-all" onclick="toggleSelectAll('${question.id}')">
+                        Select All / Deselect All
+                    </button>
+                    <div class="options-list" id="options-${question.id}">
+                        ${others.map(p => `
+                            <div class="option" data-id="${p.id}" onclick="toggleOption('${question.id}', ${p.id})">
+                                <div class="checkbox"><span class="checkmark">✓</span></div>
+                                <div class="option-label">${p.name}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('next-btn').textContent = 
+                currentQuestionIndex === 2 ? 'Submit ✓' : 'Next →';
+        }
+
+        function toggleOption(qId, pId) {
+            const opt = document.querySelector(`#options-${qId} .option[data-id="${pId}"]`);
+            opt.classList.toggle('selected');
+            const idx = surveyData[qId].indexOf(pId);
+            if (idx > -1) surveyData[qId].splice(idx, 1);
+            else surveyData[qId].push(pId);
+        }
+
+        function toggleSelectAll(qId) {
+            const opts = document.querySelectorAll(`#options-${qId} .option`);
+            const allSel = Array.from(opts).every(o => o.classList.contains('selected'));
+            opts.forEach(o => {
+                const pId = parseInt(o.dataset.id);
+                if (allSel) {
+                    o.classList.remove('selected');
+                    surveyData[qId] = [];
+                } else {
+                    o.classList.add('selected');
+                    if (!surveyData[qId].includes(pId)) surveyData[qId].push(pId);
+                }
+            });
+        }
+
+        function nextQuestion() {
+            if (currentQuestionIndex < 2) {
+                currentQuestionIndex++;
+                showQuestion();
+            } else {
+                submitSurvey();
+            }
+        }
+
+        async function submitSurvey() {
+            showScreen('loading-screen');
+
+            const data = {
+                personId: currentPerson.id,
+                personName: currentPerson.name,
+                personRole: currentPerson.role,
+                work: surveyData.work.join(','),
+                friend: surveyData.friend.join(','),
+                communication: surveyData.communication.join(','),
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                await fetch(scriptUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                setTimeout(() => showScreen('thanks-screen'), 1000);
+            } catch (error) {
+                alert('Error saving. Please try again.');
+                showScreen('survey-screen');
+            }
+        }
+
+        function resetSurvey() {
+            currentPerson = null;
+            renderPersonGrid();
+            showScreen('select-screen');
+        }
+
+        function showScreen(id) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        init();
+    </script>
+</body>
+</html>

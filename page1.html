@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sociogram Admin Panel</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 { font-size: 2em; margin-bottom: 10px; }
+        
+        .tabs {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            border: none;
+            background: none;
+            font-size: 1.1em;
+        }
+        
+        .tab.active { background: white; color: #667eea; border-bottom: 3px solid #667eea; }
+        
+        .content { padding: 30px; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .stat-card h3 { font-size: 0.9em; opacity: 0.9; margin-bottom: 10px; }
+        .stat-card .value { font-size: 2.5em; font-weight: bold; }
+        
+        .response-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border-left: 4px solid #ccc;
+        }
+        
+        .response-item.completed { border-left-color: #28a745; }
+        
+        .person-name { font-weight: 600; margin-bottom: 5px; }
+        .response-details { font-size: 0.85em; color: #666; }
+        
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-secondary { background: #6c757d; color: white; }
+        
+        #canvas {
+            width: 100%;
+            height: 600px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            background: #fafafa;
+            margin: 20px 0;
+            touch-action: none;
+        }
+        
+        .legend {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        
+        .legend-color {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            border: 2px solid #333;
+        }
+        
+        .legend-line { width: 40px; height: 3px; }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 12px 24px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .filter-btn.active { background: #667eea; color: white; }
+        
+        .analysis-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .analysis-card h3 { color: #667eea; margin-bottom: 15px; }
+        
+        .rank-item {
+            background: white;
+            padding: 15px;
+            margin: 8px 0;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .setup-prompt {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border-left: 4px solid #ffc107;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            font-size: 1em;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Sociogram Admin Panel</h1>
+            <p>View and analyze team relationship data</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('overview')">📈 Overview</button>
+            <button class="tab" onclick="switchTab('visualization')">🔮 Visualization</button>
+            <button class="tab" onclick="switchTab('analysis')">📊 Analysis</button>
+        </div>
+
+        <div class="content">
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-content active">
+                <div id="setup-prompt" class="setup-prompt">
+                    <strong>⚙️ Setup Required</strong><br><br>
+                    Enter the same Google Apps Script Web App URL you used in the survey:
+                    <input type="text" id="admin-script-url" placeholder="https://script.google.com/macros/s/.../exec">
+                    <button class="btn btn-primary" onclick="saveAdminUrl()">Save & Load Data</button>
+                </div>
+
+                <div id="overview-content" style="display: none;">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <h3>Total Responses</h3>
+                            <div class="value" id="stat-responses">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Completion Rate</h3>
+                            <div class="value" id="stat-completion">0%</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Total Connections</h3>
+                            <div class="value" id="stat-connections">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <h3>Avg/Person</h3>
+                            <div class="value" id="stat-avg">0</div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="loadData()">🔄 Refresh Data</button>
+                    <button class="btn btn-secondary" onclick="exportData()">💾 Export JSON</button>
+                    <button class="btn btn-secondary" onclick="viewSheet()">📋 View Sheet</button>
+
+                    <h3 style="margin: 30px 0 15px 0;">Response Status</h3>
+                    <div id="response-list"></div>
+                </div>
+            </div>
+
+            <!-- Visualization Tab -->
+            <div id="visualization" class="tab-content">
+                <div id="viz-loading" class="loading">
+                    <p>Load data from Overview tab first</p>
+                </div>
+
+                <div id="viz-content" style="display: none;">
+                    <div class="legend">
+                        <strong>Legend:</strong>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #FFD700;"></div>
+                            <span>CEO</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #4CAF50;"></div>
+                            <span>Supervisor</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-color" style="background: #2196F3;"></div>
+                            <span>Intern</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-line" style="background: #e91e63;"></div>
+                            <span>Work</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-line" style="background: #9c27b0;"></div>
+                            <span>Friendship</span>
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-line" style="background: #ff9800;"></div>
+                            <span>Communication</span>
+                        </div>
+                    </div>
+
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" onclick="filterViz('all')">🌟 All</button>
+                        <button class="filter-btn" onclick="filterViz('work')">💼 Work</button>
+                        <button class="filter-btn" onclick="filterViz('friend')">👥 Friends</button>
+                        <button class="filter-btn" onclick="filterViz('communication')">💬 Comm</button>
+                    </div>
+
+                    <canvas id="canvas"></canvas>
+
+                    <button class="btn btn-primary" onclick="saveImage()">📸 Save as PNG</button>
+                </div>
+            </div>
+
+            <!-- Analysis Tab -->
+            <div id="analysis" class="tab-content">
+                <div id="analysis-loading" class="loading">
+                    <p>Load data from Overview tab first</p>
+                </div>
+                <div id="analysis-content" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_URL_KEY = 'sociogram_admin_url';
+        const SHEET_URL_KEY = 'sociogram_sheet_url';
+        
+        const colleagues = [
+            { id: 1, name: "Yasar", role: "Intern" },
+            { id: 2, name: "Nandani", role: "Intern" },
+            { id: 3, name: "Vrinda", role: "Intern" },
+            { id: 4, name: "Prapti", role: "Intern" },
+            { id: 5, name: "Pradipta", role: "Intern" },
+            { id: 6, name: "Devyani", role: "Intern" },
+            { id: 7, name: "Lakshyata", role: "Intern" },
+            { id: 8, name: "Stuti", role: "Intern" },
+            { id: 9, name: "Hershi", role: "Intern" },
+            { id: 10, name: "Hinal", role: "Intern" },
+            { id: 11, name: "Shraddha", role: "Intern" },
+            { id: 12, name: "Jenil", role: "Supervisor" },
+            { id: 13, name: "Pooja", role: "Intern" },
+            { id: 14, name: "Ayushi", role: "Intern" },
+            { id: 15, name: "Deeya", role: "Intern" },
+            { id: 16, name: "Grisha", role: "Intern" },
+            { id: 17, name: "Niyati", role: "Supervisor" },
+            { id: 18, name: "Ishika", role: "Intern" },
+            { id: 19, name: "Krishna", role: "Intern" },
+            { id: 20, name: "Kaeyoor Joshi", role: "CEO" }
+        ];
+
+        let scriptUrl = '';
+        let sheetUrl = '';
+        let allResponses = [];
+        let nodes = [];
+        let currentFilter = 'all';
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas?.getContext('2d');
+
+        function init() {
+            scriptUrl = localStorage.getItem(ADMIN_URL_KEY) || '';
+            sheetUrl = localStorage.getItem(SHEET_URL_KEY) || '';
+            
+            if (scriptUrl) {
+                document.getElementById('setup-prompt').style.display = 'none';
+                document.getElementById('overview-content').style.display = 'block';
+                loadData();
+            }
+        }
+
+        function saveAdminUrl() {
+            const url = document.getElementById('admin-script-url').value.trim();
+            if (!url || !url.includes('script.google.com')) {
+                alert('Invalid URL');
+                return;
+            }
+            scriptUrl = url;
+            localStorage.setItem(ADMIN_URL_KEY, url);
+            
+            // Extract sheet URL from script URL
+            const match = url.match(/\/d\/([a-zA-Z0-9-_]+)/);
+            if (match) {
+                sheetUrl = `https://docs.google.com/spreadsheets/d/${match[1]}`;
+                localStorage.setItem(SHEET_URL_KEY, sheetUrl);
+            }
+            
+            document.getElementById('setup-prompt').style.display = 'none';
+            document.getElementById('overview-content').style.display = 'block';
+            loadData();
+        }
+
+        async function loadData() {
+            try {
+                const response = await fetch(scriptUrl + '?action=get');
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    allResponses = result.data || [];
+                    updateOverview();
+                    generateVisualization();
+                    generateAnalysis();
+                } else {
+                    alert('Error loading data: ' + result.message);
+                }
+            } catch (error) {
+                alert('Error loading data. Make sure the script URL is correct.');
+                console.error(error);
+            }
+        }
+
+        function updateOverview() {
+            const responseCount = allResponses.length;
+            const completion = Math.round((responseCount / colleagues.length) * 100);
+            
+            let totalConnections = 0;
+            allResponses.forEach(r => {
+                totalConnections += (r.Work?.split(',').filter(x => x).length || 0) +
+                                   (r.Friend?.split(',').filter(x => x).length || 0) +
+                                   (r.Communication?.split(',').filter(x => x).length || 0);
+            });
+            
+            const avg = responseCount > 0 ? (totalConnections / responseCount).toFixed(1) : 0;
+
+            document.getElementById('stat-responses').textContent = responseCount;
+            document.getElementById('stat-completion').textContent = completion + '%';
+            document.getElementById('stat-connections').textContent = totalConnections;
+            document.getElementById('stat-avg').textContent = avg;
+
+            const list = document.getElementById('response-list');
+            const responseIds = allResponses.map(r => parseInt(r['Person ID']));
+            
+            list.innerHTML = colleagues.map(p => {
+                const hasResponse = responseIds.includes(p.id);
+                const response = allResponses.find(r => parseInt(r['Person ID']) === p.id);
+                
+                let details = '';
+                if (response) {
+                    const w = response.Work?.split(',').filter(x => x).length || 0;
+                    const f = response.Friend?.split(',').filter(x => x).length || 0;
+                    const c = response.Communication?.split(',').filter(x => x).length || 0;
+                    details = `<div class="response-details">Work: ${w} | Friends: ${f} | Comm: ${c}</div>`;
+                }
+                
+                return `
+                    <div class="response-item ${hasResponse ? 'completed' : ''}">
+                        <div>
+                            <div class="person-name">${p.name}</div>
+                            ${details}
+                        </div>
+                        <span style="color: ${hasResponse ? '#28a745' : '#ffc107'}; font-weight: 600;">
+                            ${hasResponse ? '✓ Done' : 'Pending'}
+                        </span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function generateVisualization() {
+            document.getElementById('viz-loading').style.display = 'none';
+            document.getElementById('viz-content').style.display = 'block';
+            
+            initNodes();
+            applyForces();
+            setTimeout(() => {
+                resizeCanvas();
+                drawGraph();
+            }, 100);
+        }
+
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+
+        function initNodes() {
+            nodes = colleagues.map((p, i) => {
+                const angle = (i / colleagues.length) * 2 * Math.PI;
+                const radius = 200;
+                return {
+                    ...p,
+                    x: 300 + radius * Math.cos(angle),
+                    y: 300 + radius * Math.sin(angle),
+                    vx: 0, vy: 0
+                };
+            });
+        }
+
+        function applyForces() {
+            for (let iter = 0; iter < 150; iter++) {
+                nodes.forEach(n => { n.fx = 0; n.fy = 0; });
+                
+                // Repulsion
+                for (let i = 0; i < nodes.length; i++) {
+                    for (let j = i + 1; j < nodes.length; j++) {
+                        const dx = nodes[j].x - nodes[i].x;
+                        const dy = nodes[j].y - nodes[i].y;
+                        const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+                        const force = 3000 / (dist * dist);
+                        
+                        nodes[i].fx -= force * dx / dist;
+                        nodes[i].fy -= force * dy / dist;
+                        nodes[j].fx += force * dx / dist;
+                        nodes[j].fy += force * dy / dist;
+                    }
+                }
+                
+                // Attraction
+                allResponses.forEach(resp => {
+                    const node = nodes.find(n => n.id === parseInt(resp['Person ID']));
+                    if (!node) return;
+                    
+                    ['Work', 'Friend', 'Communication'].forEach(type => {
+                        const targets = resp[type]?.split(',').filter(x => x).map(x => parseInt(x)) || [];
+                        targets.forEach(targetId => {
+                            const target = nodes.find(n => n.id === targetId);
+                            if (target) {
+                                const dx = target.x - node.x;
+                                const dy = target.y - node.y;
+                                const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+                                const force = 0.04 * (dist - 100);
+                                
+                                node.fx += force * dx / dist;
+                                node.fy += force * dy / dist;
+                            }
+                        });
+                    });
+                });
+                
+                // Update
+                nodes.forEach(node => {
+                    node.vx = (node.vx + node.fx) * 0.85;
+                    node.vy = (node.vy + node.fy) * 0.85;
+                    node.x += node.vx;
+                    node.y += node.vy;
+                    
+                    node.x = Math.max(50, Math.min(550, node.x));
+                    node.y = Math.max(50, Math.min(550, node.y));
+                });
+            }
+        }
+
+        function drawGraph() {
+            if (!ctx) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const scaleX = canvas.width / 600;
+            const scaleY = canvas.height / 600;
+            
+            // Draw edges
+            allResponses.forEach(resp => {
+                const node = nodes.find(n => n.id === parseInt(resp['Person ID']));
+                if (!node) return;
+                
+                const typeMap = {
+                    'Work': { color: '#e91e63', key: 'work' },
+                    'Friend': { color: '#9c27b0', key: 'friend' },
+                    'Communication': { color: '#ff9800', key: 'communication' }
+                };
+                
+                Object.entries(typeMap).forEach(([type, config]) => {
+                    if (currentFilter !== 'all' && currentFilter !== config.key) return;
+                    
+                    const targets = resp[type]?.split(',').filter(x => x).map(x => parseInt(x)) || [];
+                    targets.forEach(targetId => {
+                        const target = nodes.find(n => n.id === targetId);
+                        if (target) {
+                            const targetResp = allResponses.find(r => parseInt(r['Person ID']) === targetId);
+                            const mutual = targetResp && targetResp[type]?.split(',').includes(node.id.toString());
+                            
+                            ctx.strokeStyle = config.color;
+                            ctx.lineWidth = mutual ? 3 : 1.5;
+                            ctx.globalAlpha = 0.6;
+                            
+                            ctx.beginPath();
+                            ctx.moveTo(node.x * scaleX, node.y * scaleY);
+                            ctx.lineTo(target.x * scaleX, target.y * scaleY);
+                            ctx.stroke();
+                            
+                            if (!mutual) {
+                                const angle = Math.atan2((target.y - node.y) * scaleY, (target.x - node.x) * scaleX);
+                                const tipX = target.x * scaleX - Math.cos(angle) * 25;
+                                const tipY = target.y * scaleY - Math.sin(angle) * 25;
+                                
+                                ctx.beginPath();
+                                ctx.moveTo(tipX, tipY);
+                                ctx.lineTo(tipX - 10 * Math.cos(angle - Math.PI/6), tipY - 10 * Math.sin(angle - Math.PI/6));
+                                ctx.moveTo(tipX, tipY);
+                                ctx.lineTo(tipX - 10 * Math.cos(angle + Math.PI/6), tipY - 10 * Math.sin(angle + Math.PI/6));
+                                ctx.stroke();
+                            }
+                            ctx.globalAlpha = 1;
+                        }
+                    });
+                });
+            });
+            
+            // Draw nodes
+            nodes.forEach(node => {
+                const colors = { CEO: '#FFD700', Supervisor: '#4CAF50', Intern: '#2196F3' };
+                const hasResp = allResponses.some(r => parseInt(r['Person ID']) === node.id);
+                
+                ctx.fillStyle = colors[node.role];
+                ctx.strokeStyle = '#333';
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = hasResp ? 1 : 0.3;
+                
+                ctx.beginPath();
+                ctx.arc(node.x * scaleX, node.y * scaleY, 18, 0, 2 * Math.PI);
+                ctx.fill();
+                ctx.stroke();
+                
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = '#333';
+                ctx.font = 'bold 11px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(node.name, node.x * scaleX, node.y * scaleY - 25);
+            });
+        }
+
+        function filterViz(type) {
+            currentFilter = type;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            drawGraph();
+        }
+
+        function generateAnalysis() {
+            document.getElementById('analysis-loading').style.display = 'none';
+            document.getElementById('analysis-content').style.display = 'block';
+            
+            const counts = {};
+            colleagues.forEach(p => counts[p.id] = { in: 0, out: 0 });
+            
+            let total = 0, mutual = 0;
+            allResponses.forEach(resp => {
+                const id = parseInt(resp['Person ID']);
+                ['Work', 'Friend', 'Communication'].forEach(type => {
+                    const targets = resp[type]?.split(',').filter(x => x).map(x => parseInt(x)) || [];
+                    targets.forEach(targetId => {
+                        total++;
+                        counts[id].out++;
+                        counts[targetId].in++;
+                        
+                        const targetResp = allResponses.find(r => parseInt(r['Person ID']) === targetId);
+                        if (targetResp && targetResp[type]?.split(',').includes(id.toString())) {
+                            mutual++;
+                        }
+                    });
+                });
+            });
+            mutual /= 2;
+            
+            const popular = colleagues
+                .map(p => ({ name: p.name, count: counts[p.id].in }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5);
+            
+            const connected = colleagues
+                .map(p => ({ name: p.name, count: counts[p.id].in + counts[p.id].out }))
+                .sort((a, b) => b.count - a.count)
+                .slice(0, 5);
+
+            document.getElementById('analysis-content').innerHTML = `
+                <div class="analysis-card">
+                    <h3>📊 Network Overview</h3>
+                    <p style="font-size: 2em; font-weight: bold; margin: 10px 0;">${total} Total Connections</p>
+                    <p>✓ Mutual: ${mutual} | → One-way: ${total - mutual*2}</p>
+                    <p>📈 Reciprocity Rate: ${((mutual*2/total)*100).toFixed(0)}%</p>
+                </div>
+
+                <div class="analysis-card">
+                    <h3>🌟 Most Popular (Chosen by Others)</h3>
+                    ${popular.map((p, i) => `
+                        <div class="rank-item">
+                            <span>${i+1}. ${p.name}</span>
+                            <strong>${p.count} votes</strong>
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="analysis-card">
+                    <h3>🔗 Most Connected (Total)</h3>
+                    ${connected.map((p, i) => `
+                        <div class="rank-item">
+                            <span>${i+1}. ${p.name}</span>
+                            <strong>${p.count} connections</strong>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function exportData() {
+            const blob = new Blob([JSON.stringify({
+                colleagues,
+                responses: allResponses,
+                exportDate: new Date().toISOString()
+            }, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sociogram-data.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function viewSheet() {
+            if (sheetUrl) {
+                window.open(sheetUrl, '_blank');
+            } else {
+                alert('Sheet URL not found. Please re-enter your script URL.');
+            }
+        }
+
+        function saveImage() {
+            const a = document.createElement('a');
+            a.download = 'sociogram.png';
+            a.href = canvas.toDataURL();
+            a.click();
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
+            
+            if (tab === 'visualization' && allResponses.length > 0) {
+                setTimeout(() => drawGraph(), 100);
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
